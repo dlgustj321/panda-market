@@ -11,7 +11,7 @@ export const app = express();
 
 // CORS 설정: 특정 origin만 허용하도록 수정 (필요한 origin을 추가)
 const corsOptions = {
-  origin: ["http://localhost:3000", "https://example.com"], // 클라이언트 URL을 여기에 추가
+  origin: ["http://localhost:5500", "https://example.com"], // 클라이언트 URL을 여기에 추가
 };
 app.use(cors(corsOptions));
 
@@ -112,6 +112,42 @@ app.get(
     res.send(finalData);  // 결과 응답
   })
 );
+
+app.get('/products', asyncHandler(async (req, res) => {
+  console.log("GET /products 요청 수신");  // 로그 출력
+
+  const { sort = "recent", offset = 0, keyword = "", limit = 0 } = req.query;
+  const count = limit ? parseInt(limit) : 10;
+
+  const sortOption = sort === "recent" ? { createdAt: "desc" } : { favoriteCount: "desc" };
+
+  const searchCondition = keyword
+    ? {
+        $or: [
+          { name: { $regex: `${keyword}`, $options: "i" } },
+          { description: { $regex: `${keyword}`, $options: "i" } },
+        ],
+      }
+    : {};
+
+  try {
+    const products = await Product.find(searchCondition)
+      .sort(sortOption)
+      .skip(parseInt(offset))
+      .limit(count);
+  
+    const searchCount = await Product.countDocuments(searchCondition);
+
+    const finalData = {
+      searchCount: searchCount,
+      products: products,
+    };
+    res.send(finalData);
+  } catch (error) {
+    console.error("오류 발생:", error);  // 오류 출력
+    res.status(500).send({ message: error.message });
+  }
+}));
 
 // 상품 수정 API (PATCH)
 app.patch(
