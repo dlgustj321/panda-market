@@ -13,7 +13,7 @@ Content-Type: application/json
 {
   "name":"LG 그램",
   "description":"저렴한 가격, 높은 성능",
-  "price":130,0000,
+  "price":1300000,
   "tags":["LG", "노트북"]
 }
 
