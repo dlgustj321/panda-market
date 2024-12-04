@@ -9,38 +9,32 @@ import useDeviceSize from '../hooks/useDeviceSize.js';
 
 function ProductListPage() {
   const [items, setItems] = useState([]);
-  // const [bestItems, setBestItems] = useState([]);
   const [sort, setSort] = useState('recent'); // 정렬 옵션
   const [keyword, setKeyword] = useState(''); // 검색
   const [page, setPage] = useState(1); // pagination에 필요
   const [maxPage, setMaxPage] = useState(0); // pagination에 필요
-  const [loadingError, setloadingError] = useState(null);
+  const [loadingError, setLoadingError] = useState(null);
   const { isTablet, isMobile } = useDeviceSize(); // 미디어 쿼리
 
   const handleLoad = useCallback(
     async (options) => {
       let result;
       try {
-        setloadingError(null);
+        setLoadingError(null);
         result = await getProducts(options);
-        if (!result) return;
-      } catch (error) {
-        setloadingError(error);
-      }
+        if (!result || !result.products) {
+          throw new Error("Products not found");
+        }
 
-      const { products, searchCount } = result;
-      setItems(products);
-      setMaxPage(Math.ceil(searchCount / options.limit));
-      console.log(page, sort, keyword);
+        const { products, searchCount } = result;
+        setItems(products);
+        setMaxPage(Math.ceil(searchCount / options.limit));
+      } catch (error) {
+        setLoadingError(error.message || "An error occurred while loading the products.");
+      }
     },
     [keyword, page, sort]
   );
-
-  // const handleLoadBest = async (options) => {
-  //   const result = await getProducts(options);
-  //   const { list } = result;
-  //   setBestItems(list);
-  // };
 
   const handleSubmit = (keyword) => {
     setKeyword(keyword);
@@ -63,21 +57,11 @@ function ProductListPage() {
     });
   }, [sort, keyword, page, isTablet, isMobile, handleLoad]);
 
-  // 베스트 상품 목록 불러오기
-  // useEffect(() => {
-  //   handleLoadBest({
-  //     page: 1,
-  //     pageSize: isTablet ? 2 : isMobile ? 1 : 4,
-  //     orderBy: "favorite",
-  //   });
-  // }, [isTablet, isMobile]);
-
   return (
     <div>
       <Header isProductPage={true} />
-      {loadingError?.message && <span>{loadingError.message}</span>}
+      {loadingError && <span>{loadingError}</span>} {/* 오류 메시지 출력 */}
       <main>
-        {/* <ProductList isBest={true} items={bestItems} /> */}
         <ProductList items={items} value={sort} onClick={setSort} onSubmit={handleSubmit} />
         <Pagination currentPage={page} maxPage={maxPage} onClick={setPage} />
       </main>
